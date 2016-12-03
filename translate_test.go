@@ -5,5 +5,5 @@ import (
 )
 
 func TestTranslate(t *testing.T) {
-	Translate("abc 中国人")
+	Translate("zh-CN", "zh-TW", "abc 中国人")
 }

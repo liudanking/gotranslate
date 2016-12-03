@@ -3,16 +3,8 @@ package gotranslate
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
-
-	"github.com/liudanking/goutil/netutil"
-)
-
-const (
-	GOOGLE_TRANSLATE_ADDR = "http://translate.google.cn"
 )
 
 var _tkkReg *regexp.Regexp
@@ -22,27 +14,13 @@ func init() {
 }
 
 func getTKK() (int, int, error) {
-	data, err := httpRequest("GET", GOOGLE_TRANSLATE_ADDR, nil)
+	data, err := httpRequest("GET", _translateAddr, nil)
 	if err != nil {
 		return 0, 0, err
 	}
 	c, d := findTKK(string(data))
 	log.Printf("%d.%d", c, d)
 	return c, d, nil
-}
-
-func httpRequest(method, addr string, params map[string]string) ([]byte, error) {
-	pf := func(r *http.Request) (*url.URL, error) {
-		purl, _ := url.Parse("http://127.0.0.1:6152")
-		return purl, nil
-	}
-	data, code, err := netutil.DefaultHttpClient().RequestForm(method, addr, params).UserAgent(netutil.UA_SAFARI).
-		Proxy(pf).
-		DoByte()
-	if err != nil {
-		log.Printf("http request failed:[%d] %v", code, err)
-	}
-	return data, err
 }
 
 func findTKK(s string) (int, int) {

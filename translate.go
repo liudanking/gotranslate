@@ -1,26 +1,124 @@
 package gotranslate
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
+
+	"github.com/liudanking/goutil/netutil"
+	"github.com/liudanking/goutil/strutil"
 )
 
-func Translate(q string) {
-	// h1, h2, err := getTKK()
-	// if err != nil {
-	// 	log.Printf("get tkk error:%v", err)
-	// 	return
-	// }
-	h1 := 411279
-	h2 := 2826815461
+const (
+	TRANSLATE_COM_ADDR = "https://translate.google.com"
+	TRANSLATE_CN_ADDR  = "http://translate.google.cn"
+)
+
+// ISO839-1 https://cloud.google.com/translate/docs/languages
+var _supportedLangs = []string{"af", "sq", "am", "ar", "hy", "az", "eu", "be", "bn", "bs",
+	"bg", "ca", "ceb", "ny", "zh-CN", "zh-TW", "co", "hr", "cs", "da", "nl", "en",
+	"eo", "et", "tl", "fi", "fr", "fy", "gl", "ka", "de", "el", "gu", "ht", "ha",
+	"haw", "iw", "hi", "hmn", "hu", "is", "ig", "id", "ga", "it", "ja", "jw", "kn",
+	"kk", "km", "ko", "ku", "ky", "lo", "la", "lv", "lt", "lb", "mk", "mg", "ms",
+	"ml", "mt", "mi", "mr", "mn", "my", "ne", "no", "ps", "fa", "pl", "pt", "ma",
+	"ro", "ru", "sm", "gd", "sr", "st", "sn", "sd", "si", "sk", "sl", "so", "es",
+	"su", "sw", "sv", "tg", "ta", "te", "th", "tr", "uk", "ur", "uz", "vi", "cy",
+	"xh", "yi", "yo", "zu"}
+
+var _translateAddr string
+
+func init() {
+	_translateAddr = TRANSLATE_COM_ADDR
+}
+
+type TranslateRet struct {
+	Sentences []struct {
+		Trans   string `json:"trans"`
+		Orig    string `json:"orig"`
+		Backend int    `json:"backend"`
+	} `json:"sentences"`
+	Src        string  `json:"src"`
+	Confidence float64 `json:"confidence"`
+	LdResult   struct {
+		Srclangs            []string  `json:"srclangs"`
+		SrclangsConfidences []float64 `json:"srclangs_confidences"`
+		ExtendedSrclangs    []string  `json:"extended_srclangs"`
+	} `json:"ld_result"`
+}
+
+func Translate(sl, tl, q string) (*TranslateRet, error) {
+	if sl != "auto" {
+		if !strutil.StringIn(_supportedLangs, sl) {
+			return nil, errors.New("source language not supported")
+		}
+	}
+
+	if !strutil.StringIn(_supportedLangs, tl) {
+		return nil, errors.New("target language not supported")
+	}
+
+	h1, h2, err := getTKK()
+	if err != nil {
+		log.Printf("get tkk error:%v", err)
+		return nil, err
+	}
+
 	tkstr := tk(h1, h2, q)
 
 	log.Printf("tk:%s", tkstr)
-
-	q = url.QueryEscape(q)
-	addr := fmt.Sprintf("http://translate.google.cn/translate_a/single?client=t&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s", tkstr, q)
-	data, err := httpRequest("GET", addr, nil)
+	// https://translate.google.com/translate_a/single?client=t&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s
+	var data []byte
+	if false {
+		q = url.QueryEscape(q)
+		addr := fmt.Sprintf("%s/translate_a/single?client=t&dj=1&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s", _translateAddr, tkstr, q)
+		data, err = httpRequest("GET", addr, nil)
+	} else {
+		addr := fmt.Sprintf("%s/translate_a/single", _translateAddr)
+		data, err = httpRequest("GET", addr, reqParams("zh-CN", "zh-TW", tkstr, q))
+	}
 	log.Printf("%s %v", data, err)
 
+	ret := &TranslateRet{}
+	err = json.Unmarshal(data, ret)
+	return ret, err
+}
+
+func reqParams(sl, tl, tk, q string) map[string]interface{} {
+	return map[string]interface{}{
+		"client": "t",     // or gtx
+		"sl":     sl,      // source language
+		"tl":     tl,      // translated language
+		"dj":     1,       // ensure return json is GoogleRes structure
+		"ie":     "UTF-8", // input string encoding
+		"oe":     "UTF-8", // output string encoding
+		"tk":     tk,
+		"q":      q,
+		"dt":     []string{"t", "bd"}, // a list to add content to return json
+		// possible dt values: correspond return json key
+		// t: sentences
+		// rm: sentences[1]
+		// bd: dict
+		// at: alternative_translations
+		// ss: synsets
+		// rw: related_words
+		// ex: examples
+		// ld: ld_result
+	}
+}
+
+func httpRequest(method, addr string, params map[string]interface{}) ([]byte, error) {
+	pf := func(r *http.Request) (*url.URL, error) {
+		purl, _ := url.Parse("http://127.0.0.1:6152")
+		return purl, nil
+	}
+	data, code, err := netutil.DefaultHttpClient().RequestForm(method, addr, params).UserAgent(netutil.UA_SAFARI).
+		Proxy(pf).
+		DoByte()
+	if err != nil {
+		log.Printf("http request failed:[%d] %v", code, err)
+	}
+	return data, err
 }
