@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/liudanking/goutil/netutil"
 	"github.com/liudanking/goutil/strutil"
@@ -28,10 +29,33 @@ var _supportedLangs = []string{"af", "sq", "am", "ar", "hy", "az", "eu", "be", "
 	"su", "sw", "sv", "tg", "ta", "te", "th", "tr", "uk", "ur", "uz", "vi", "cy",
 	"xh", "yi", "yo", "zu"}
 
-var _translateAddr string
+var defaultGTranslate *GTranslate
 
 func init() {
-	_translateAddr = TRANSLATE_COM_ADDR
+	defaultGTranslate, _ = New(TRANSLATE_CN_ADDR, nil)
+}
+
+type GTranslate struct {
+	srvAddr string
+	proxy   func(r *http.Request) (*url.URL, error)
+	// TODO, maybe
+	tkkMtx sync.RWMutex
+	tkk    typeTKK
+}
+
+type typeTKK struct {
+	h1 int
+	h2 int
+}
+
+func New(addr string, proxy func(r *http.Request) (*url.URL, error)) (*GTranslate, error) {
+	if addr != TRANSLATE_CN_ADDR && addr != TRANSLATE_COM_ADDR {
+		return nil, errors.New("addr not supported")
+	}
+	return &GTranslate{
+		srvAddr: addr,
+		proxy:   proxy,
+	}, nil
 }
 
 type TranslateRet struct {
@@ -49,7 +73,12 @@ type TranslateRet struct {
 	} `json:"ld_result"`
 }
 
+// Translate translate q from sl to tl using default GTranslate
 func Translate(sl, tl, q string) (*TranslateRet, error) {
+	return defaultGTranslate.Translate(sl, tl, q)
+}
+
+func (gt *GTranslate) Translate(sl, tl, q string) (*TranslateRet, error) {
 	if sl != "auto" {
 		if !strutil.StringIn(_supportedLangs, sl) {
 			return nil, errors.New("source language not supported")
@@ -60,7 +89,7 @@ func Translate(sl, tl, q string) (*TranslateRet, error) {
 		return nil, errors.New("target language not supported")
 	}
 
-	h1, h2, err := getTKK()
+	h1, h2, err := gt.getTKK()
 	if err != nil {
 		log.Printf("get tkk error:%v", err)
 		return nil, err
@@ -68,25 +97,24 @@ func Translate(sl, tl, q string) (*TranslateRet, error) {
 
 	tkstr := tk(h1, h2, q)
 
-	log.Printf("tk:%s", tkstr)
 	// https://translate.google.com/translate_a/single?client=t&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s
 	var data []byte
 	if false {
 		q = url.QueryEscape(q)
-		addr := fmt.Sprintf("%s/translate_a/single?client=t&dj=1&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s", _translateAddr, tkstr, q)
-		data, err = httpRequest("GET", addr, nil)
+		addr := fmt.Sprintf("%s/translate_a/single?client=t&dj=1&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s", gt.srvAddr, tkstr, q)
+		data, err = gt.httpRequest("GET", addr, nil)
 	} else {
-		addr := fmt.Sprintf("%s/translate_a/single", _translateAddr)
-		data, err = httpRequest("GET", addr, reqParams("zh-CN", "zh-TW", tkstr, q))
+		addr := fmt.Sprintf("%s/translate_a/single", gt.srvAddr)
+		data, err = gt.httpRequest("GET", addr, gt.reqParams(sl, tl, tkstr, q))
 	}
-	log.Printf("%s %v", data, err)
+	// log.Printf("%s %v", data, err)
 
 	ret := &TranslateRet{}
 	err = json.Unmarshal(data, ret)
 	return ret, err
 }
 
-func reqParams(sl, tl, tk, q string) map[string]interface{} {
+func (gt *GTranslate) reqParams(sl, tl, tk, q string) map[string]interface{} {
 	return map[string]interface{}{
 		"client": "t",     // or gtx
 		"sl":     sl,      // source language
@@ -109,14 +137,9 @@ func reqParams(sl, tl, tk, q string) map[string]interface{} {
 	}
 }
 
-func httpRequest(method, addr string, params map[string]interface{}) ([]byte, error) {
-	pf := func(r *http.Request) (*url.URL, error) {
-		purl, _ := url.Parse("http://127.0.0.1:6152")
-		return purl, nil
-	}
-	data, code, err := netutil.DefaultHttpClient().RequestForm(method, addr, params).UserAgent(netutil.UA_SAFARI).
-		Proxy(pf).
-		DoByte()
+func (gt *GTranslate) httpRequest(method, addr string, params map[string]interface{}) ([]byte, error) {
+
+	data, code, err := netutil.DefaultHttpClient().RequestForm(method, addr, params).UserAgent(netutil.UA_SAFARI).Proxy(gt.proxy).DoByte()
 	if err != nil {
 		log.Printf("http request failed:[%d] %v", code, err)
 	}

@@ -1,10 +1,12 @@
 package gotranslate
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 var _tkkReg *regexp.Regexp
@@ -13,31 +15,66 @@ func init() {
 	_tkkReg = regexp.MustCompile(`TKK\=eval\('\(\(function\(\)\{var\s+a\\x3d(-?\d+);var\s+b\\x3d(-?\d+);return\s+(\d+)\+`)
 }
 
-func getTKK() (int, int, error) {
-	data, err := httpRequest("GET", _translateAddr, nil)
+func (gt *GTranslate) getTKK() (int, int, error) {
+	data, err := gt.httpRequest("GET", gt.srvAddr, nil)
 	if err != nil {
 		return 0, 0, err
 	}
-	c, d := findTKK(string(data))
-	log.Printf("%d.%d", c, d)
-	return c, d, nil
+	return findTKK(string(data))
 }
 
-func findTKK(s string) (int, int) {
+// TODO
+func (gt *GTranslate) setTKK(tkk typeTKK) {
+	gt.tkkMtx.Lock()
+	gt.tkk = tkk
+	gt.tkkMtx.Unlock()
+}
+
+func (gt *GTranslate) initTKK() error {
+	data, err := gt.httpRequest("GET", gt.srvAddr, nil)
+	if err != nil {
+		return err
+	}
+	h1, h2, err := findTKK(string(data))
+	if err != nil {
+		return err
+	}
+	gt.setTKK(typeTKK{h1: h1, h2: h2})
+	return nil
+}
+
+func (gt *GTranslate) updateTKK() {
+	var data []byte
+	var err error
+	var h1 int
+	var h2 int
+	for {
+		data, err = gt.httpRequest("GET", gt.srvAddr, nil)
+		if err != nil {
+			log.Printf("get tkk failed:%v", err)
+			goto next
+		}
+		h1, h2, err = findTKK(string(data))
+		if err != nil {
+			log.Printf("try to find tkk from [%s] failed:%v", data, err)
+		}
+		gt.setTKK(typeTKK{h1: h1, h2: h2})
+	next:
+		time.Sleep(60 * time.Second)
+	}
+}
+
+func findTKK(s string) (int, int, error) {
 	rets := _tkkReg.FindStringSubmatch(s)
 	if len(rets) != 4 {
-		return 0, 0
+		return 0, 0, errors.New("can't find TKK")
 	}
-	// log.Printf("rets:%+v", rets)
-	for k, v := range rets {
-		log.Printf("%d:%s", k, v)
-	}
+
 	a, _ := strconv.Atoi(rets[1])
 	b, _ := strconv.Atoi(rets[2])
 	c, _ := strconv.Atoi(rets[3])
 	d := a + b
-	// log.Printf("%d.%d", c, d)
-	return c, d
+	return c, d, nil
 }
 
 // javascript:
@@ -102,13 +139,11 @@ func tk(h, h2 int, q string) string {
 			g = append(g, (c&63)|128)
 		}
 	}
-	// log.Printf("g:%+v", g)
 	a := h
 	for i := 0; i < len(g); i++ {
 		a += int(g[i])
 		a = bf(a, "+-a^+6")
 	}
-	// log.Printf("a:%d", a)
 	a = bf(a, "+-3^+b+-f")
 	a ^= h2
 	if 0 > a {
@@ -118,7 +153,7 @@ func tk(h, h2 int, q string) string {
 
 	s := fmt.Sprintf("%d.%d", a, a^h)
 
-	log.Printf("tk:%s", s)
+	// log.Printf("tk:%s", s)
 	return s
 }
 

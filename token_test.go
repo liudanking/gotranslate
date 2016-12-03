@@ -11,7 +11,10 @@ func TestFindTkk(t *testing.T) {
 	s := `MAX_ALTERNATIVES_ROUNDTRIP_RESULTS=1;TKK=eval('((function(){var a\x3d3951944662;var b\x3d-3371426310;return 411232+\x27.\x27+(a+b)})())');WEB_TRANSLATION_PATH='/translate';SIGNED_IN=false;USAGE='';`
 	// TKK=eval('((function(){var a\x3d3951944662;var b\x3d-3371426310;return 411232+\x27.\x27+(a+b)})())');
 	// "411232.580518352"
-	c, d := findTKK(s)
+	c, d, err := findTKK(s)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if fmt.Sprintf("%d.%d", c, d) != "411232.580518352" {
 		t.Fatalf("%d.%d != 411232.580518352", c, d)
 	}
