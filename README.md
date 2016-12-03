@@ -8,7 +8,7 @@ It's a pity that Google translate API has no free quota anymore. But the ajax tr
 
 ## Usage
 
-```
+```go
 package main
 
 import (
@@ -47,6 +47,22 @@ func main() {
 	log.Printf("%+v", ret)
 }
 
+```
+
+## Supported Languages
+
+From [ISO839-1](https://cloud.google.com/translate/docs/languages)
+
+```go
+var _supportedLangs = []string{"af", "sq", "am", "ar", "hy", "az", "eu", "be", "bn", "bs",
+	"bg", "ca", "ceb", "ny", "zh-CN", "zh-TW", "co", "hr", "cs", "da", "nl", "en",
+	"eo", "et", "tl", "fi", "fr", "fy", "gl", "ka", "de", "el", "gu", "ht", "ha",
+	"haw", "iw", "hi", "hmn", "hu", "is", "ig", "id", "ga", "it", "ja", "jw", "kn",
+	"kk", "km", "ko", "ku", "ky", "lo", "la", "lv", "lt", "lb", "mk", "mg", "ms",
+	"ml", "mt", "mi", "mr", "mn", "my", "ne", "no", "ps", "fa", "pl", "pt", "ma",
+	"ro", "ru", "sm", "gd", "sr", "st", "sn", "sd", "si", "sk", "sl", "so", "es",
+	"su", "sw", "sv", "tg", "ta", "te", "th", "tr", "uk", "ur", "uz", "vi", "cy",
+	"xh", "yi", "yo", "zu"}
 ```
 
 ## TODO
