@@ -94,8 +94,8 @@ func (gt *GTranslate) Translate(sl, tl, q string) (*TranslateRet, error) {
 		log.Printf("get tkk error:%v", err)
 		return nil, err
 	}
-	h1 = 411508
-	h2 = 1550816266
+	// h1 = 411508
+	// h2 = 1550816266
 
 	tkstr := tk(h1, h2, q)
 	fmt.Printf("tk:%s", tkstr)
