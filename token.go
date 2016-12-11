@@ -9,10 +9,20 @@ import (
 	"time"
 )
 
+const (
+	DEBUG = false
+)
+
 var _tkkReg *regexp.Regexp
 
 func init() {
 	_tkkReg = regexp.MustCompile(`TKK\=eval\('\(\(function\(\)\{var\s+a\\x3d(-?\d+);var\s+b\\x3d(-?\d+);return\s+(\d+)\+`)
+}
+
+func print(format string, args ...interface{}) {
+	if DEBUG {
+		log.Printf(format, args...)
+	}
 }
 
 func (gt *GTranslate) getTKK() (int, int, error) {
@@ -51,12 +61,12 @@ func (gt *GTranslate) updateTKK() {
 	for {
 		data, err = gt.httpRequest("GET", gt.srvAddr, nil)
 		if err != nil {
-			log.Printf("get tkk failed:%v", err)
+			print("get tkk failed:%v", err)
 			goto next
 		}
 		h1, h2, err = findTKK(string(data))
 		if err != nil {
-			log.Printf("try to find tkk from [%s] failed:%v", data, err)
+			print("try to find tkk from [%s] failed:%v", data, err)
 		}
 		gt.setTKK(typeTKK{h1: h1, h2: h2})
 	next:
@@ -142,6 +152,9 @@ func tk(h, h2 int, q string) string {
 	// 		g = append(g, (c&63)|128)
 	// 	}
 	// }
+	for i := 0; i < len(g); i++ {
+		print("%d:%d", i, g[i])
+	}
 
 	a := int32(h)
 	for i := 0; i < len(g); i++ {
@@ -150,23 +163,25 @@ func tk(h, h2 int, q string) string {
 	}
 	a = bf(a, "+-3^+b+-f")
 	a ^= int32(h2)
-	// fmt.Printf("a^h2:%d\n", a)
+	print("a^h2:%d\n", a)
 	var aInt64 int64
 	if 0 > a {
 		aInt64 = int64((int(a) & 2147483647) + 2147483648)
+	} else {
+		aInt64 = int64(a)
 	}
-	// fmt.Printf("0 > a:%d\n", a)
+	print("0 > a:%d\n", a)
 
 	aInt64 %= 1e6
 
 	s := fmt.Sprintf("%d.%d", aInt64, aInt64^int64(h))
 
-	// log.Printf("tk:%s", s)
+	print("tk:%s", s)
 	return s
 }
 
 func bf(a int32, s string) int32 {
-	// log.Printf("round a in:%d, %s", a, s)
+	print("round a in:%d, %s", a, s)
 	b := []rune(s)
 	for i := 0; i < len(b)-2; i += 3 {
 		c := int32(b[i+2])
@@ -176,21 +191,21 @@ func bf(a int32, s string) int32 {
 			cInt, _ := strconv.Atoi(string([]byte{byte(c)}))
 			c = int32(cInt)
 		}
-		// log.Printf("c1:%d", c)
+		print("c1:%d", c)
 		if '+' == b[i+1] {
 			c = int32(uint32(a) >> uint32(c))
 		} else {
 			c = a << uint32(c)
 		}
-		// log.Printf("c2:%d", c)
+		print("c2:%d", c)
 		if '+' == b[i] {
 			a = int32((int(a) + int(c)) & 4294967295)
 		} else {
 			a = a ^ c
 		}
-		// log.Printf("%d:c:%d", i, c)
-		// log.Printf("%d:a:%d", i, a)
+		print("%d:c:%d", i, c)
+		print("%d:a:%d", i, a)
 	}
-	// log.Printf("round a out:%d", a)
+	print("round a out:%d", a)
 	return a
 }

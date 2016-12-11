@@ -75,6 +75,17 @@ func TestTK2(t *testing.T) {
 	log.Printf("tk[%s]", ret)
 }
 
+func TestTK3(t *testing.T) {
+	h := 411508
+	h2 := 1550816266
+	q := "38号车评中心-买车是否考虑他人的眼光 第89期" // 116196.492176
+	ret := tk(h, h2, q)
+	if ret != "116196.492176" {
+		t.Fatalf("%s != 116196.492176", ret)
+	}
+	log.Printf("tk[%s]", ret)
+}
+
 func TestBF(t *testing.T) {
 	a := int32(1024)
 	b := "+-a^+6"
