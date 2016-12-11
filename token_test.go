@@ -64,8 +64,19 @@ func TestTK(t *testing.T) {
 	log.Printf("tk[%s]", ret)
 }
 
+func TestTK2(t *testing.T) {
+	h := 411508
+	h2 := 1550816266
+	q := "逗斗车 - 四川愣娃闯帝都 逗比天团再聚首 - 余洋" // 467843.91383
+	ret := tk(h, h2, q)
+	if ret != "467843.91383" {
+		t.Fatalf("%s != 467843.91383", ret)
+	}
+	log.Printf("tk[%s]", ret)
+}
+
 func TestBF(t *testing.T) {
-	a := 1024
+	a := int32(1024)
 	b := "+-a^+6"
 
 	ret := bf(a, b)

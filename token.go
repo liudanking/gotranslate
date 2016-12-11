@@ -116,68 +116,81 @@ var TKK = ((function() {
 // </script>
 
 func tk(h, h2 int, q string) string {
-	qRune := []rune(q)
-	g := []rune{}
-	for i := 0; i < len(qRune); i++ {
-		c := qRune[i]
-		if 128 > c {
-			g = append(g, c)
-			continue
-		}
-		if 2048 > c {
-			g = append(g, (c>>6)|192)
-			continue
-		}
-		if 55296 == (c&64512) && i+1 < len(qRune) && 56320 == (qRune[i+1]&64512) {
-			c2 := 65536 + ((c & 1023) << 10) + (qRune[i+1] & 1023)
-			g = append(g, (c2>>18)|240)
-			g = append(g, ((c2>>12)&63)|128)
-			i++
-		} else {
-			g = append(g, (c>>12)|224)
-			g = append(g, (c>>6)&63|128)
-			g = append(g, (c&63)|128)
-		}
+	g := make([]rune, len(q))
+	for i := 0; i < len(q); i++ {
+		g[i] = rune(q[i])
 	}
-	a := h
+	// qRune := []rune(q)
+	// for i := 0; i < len(qRune); i++ {
+	// 	c := qRune[i]
+	// 	if 128 > c {
+	// 		g = append(g, c)
+	// 		continue
+	// 	}
+	// 	if 2048 > c {
+	// 		g = append(g, (c>>6)|192)
+	// 		continue
+	// 	}
+	// 	if 55296 == (c&64512) && i+1 < len(qRune) && 56320 == (qRune[i+1]&64512) {
+	// 		c2 := 65536 + ((c & 1023) << 10) + (qRune[i+1] & 1023)
+	// 		g = append(g, (c2>>18)|240)
+	// 		g = append(g, ((c2>>12)&63)|128)
+	// 		i++
+	// 	} else {
+	// 		g = append(g, (c>>12)|224)
+	// 		g = append(g, (c>>6)&63|128)
+	// 		g = append(g, (c&63)|128)
+	// 	}
+	// }
+
+	a := int32(h)
 	for i := 0; i < len(g); i++ {
-		a += int(g[i])
+		a += int32(g[i])
 		a = bf(a, "+-a^+6")
 	}
 	a = bf(a, "+-3^+b+-f")
-	a ^= h2
+	a ^= int32(h2)
+	// fmt.Printf("a^h2:%d\n", a)
+	var aInt64 int64
 	if 0 > a {
-		a = (a & 2147483647) + 2147483648
+		aInt64 = int64((int(a) & 2147483647) + 2147483648)
 	}
-	a %= 1e6
+	// fmt.Printf("0 > a:%d\n", a)
 
-	s := fmt.Sprintf("%d.%d", a, a^h)
+	aInt64 %= 1e6
+
+	s := fmt.Sprintf("%d.%d", aInt64, aInt64^int64(h))
 
 	// log.Printf("tk:%s", s)
 	return s
 }
 
-func bf(a int, s string) int {
+func bf(a int32, s string) int32 {
+	// log.Printf("round a in:%d, %s", a, s)
 	b := []rune(s)
 	for i := 0; i < len(b)-2; i += 3 {
-		c := int(b[i+2])
+		c := int32(b[i+2])
 		if 'a' <= b[i+2] {
-			c = int(b[i+2]) - 87
+			c = int32(b[i+2]) - 87
 		} else {
-			c, _ = strconv.Atoi(string([]byte{byte(c)}))
+			cInt, _ := strconv.Atoi(string([]byte{byte(c)}))
+			c = int32(cInt)
 		}
+		// log.Printf("c1:%d", c)
 		if '+' == b[i+1] {
-			c = int(uint(a) >> uint(c))
+			c = int32(uint32(a) >> uint32(c))
 		} else {
-			c = a << uint(c)
+			c = a << uint32(c)
 		}
+		// log.Printf("c2:%d", c)
 		if '+' == b[i] {
-			a = (a + c) & 4294967295
+			a = int32((int(a) + int(c)) & 4294967295)
 		} else {
 			a = a ^ c
 		}
-		// log.Printf("c in:%d", c)
-		// log.Printf("a:%d", a)
+		// log.Printf("%d:c:%d", i, c)
+		// log.Printf("%d:a:%d", i, a)
 	}
+	// log.Printf("round a out:%d", a)
 	return a
 }

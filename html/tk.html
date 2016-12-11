@@ -8,18 +8,23 @@
 <script type="text/javascript">
 
 var TKK = ((function() {
-  return "411232.580518352";
+  // return "411232.580518352";
+  return "411508.1550816266";
 })());
 
 function b(a, b) {
+  console.log("round a in:%d, %s", a, b)
   for (var d = 0; d < b.length - 2; d += 3) {
-      var c = b.charAt(d + 2),
-          c = "a" <= c ? c.charCodeAt(0) - 87 : Number(c),
+      var c = b.charAt(d + 2);
+          c = "a" <= c ? c.charCodeAt(0) - 87 : Number(c);
+          console.log("c1:%d, a:%", c);          
           c = "+" == b.charAt(d + 1) ? a >>> c : a << c;
-          console.log("c:%d", c);
+          console.log("c2:%d", c);
       a = "+" == b.charAt(d) ? a + c & 4294967295 : a ^ c;
-      console.log("a:%d", a);
+      console.log("%d:c:%d", d, c);
+      console.log("%d:a:%d", d, a);
   }
+  console.log("round a out:%d", a);
   return a
 }
 
@@ -34,7 +39,9 @@ function tk(a) {
     console.log("a:%d", a);
     a = b(a, "+-3^+b+-f");
     a ^= Number(e[1]) || 0;
+    console.log("a^h2:%d", a);
     0 > a && (a = (a & 2147483647) + 2147483648);
+    console.log("0 > a:%d", a);
     a %= 1E6;
     return a.toString() + "." + (a ^ h)
 }

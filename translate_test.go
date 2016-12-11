@@ -1,6 +1,7 @@
 package gotranslate
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"testing"
@@ -15,9 +16,11 @@ func TestTranslate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ret, err := gt.Translate("zh-CN", "zh-TW", "abc 中国人")
+	q := "逗斗车 - 四川愣娃闯帝都 逗比天团再聚首 - 余洋"
+	// q := "abc中国人"
+	ret, err := gt.Translate("zh-CN", "zh-TW", q)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("ret:%+v", ret)
+	log.Printf("ret:%+v", ret)
 }
