@@ -130,28 +130,7 @@ func tk(h, h2 int, q string) string {
 	for i := 0; i < len(q); i++ {
 		g[i] = rune(q[i])
 	}
-	// qRune := []rune(q)
-	// for i := 0; i < len(qRune); i++ {
-	// 	c := qRune[i]
-	// 	if 128 > c {
-	// 		g = append(g, c)
-	// 		continue
-	// 	}
-	// 	if 2048 > c {
-	// 		g = append(g, (c>>6)|192)
-	// 		continue
-	// 	}
-	// 	if 55296 == (c&64512) && i+1 < len(qRune) && 56320 == (qRune[i+1]&64512) {
-	// 		c2 := 65536 + ((c & 1023) << 10) + (qRune[i+1] & 1023)
-	// 		g = append(g, (c2>>18)|240)
-	// 		g = append(g, ((c2>>12)&63)|128)
-	// 		i++
-	// 	} else {
-	// 		g = append(g, (c>>12)|224)
-	// 		g = append(g, (c>>6)&63|128)
-	// 		g = append(g, (c&63)|128)
-	// 	}
-	// }
+
 	for i := 0; i < len(g); i++ {
 		print("%d:%d", i, g[i])
 	}
@@ -176,7 +155,7 @@ func tk(h, h2 int, q string) string {
 
 	s := fmt.Sprintf("%d.%d", aInt64, aInt64^int64(h))
 
-	print("tk:%s", s)
+	// print("tk:%s", s)
 	return s
 }
 

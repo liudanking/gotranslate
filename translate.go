@@ -98,7 +98,7 @@ func (gt *GTranslate) Translate(sl, tl, q string) (*TranslateRet, error) {
 	// h2 = 1550816266
 
 	tkstr := tk(h1, h2, q)
-	fmt.Printf("tk:%s", tkstr)
+	// fmt.Printf("tk:%s", tkstr)
 	// return nil, nil
 
 	// https://translate.google.com/translate_a/single?client=t&sl=zh-CN&tl=zh-TW&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&otf=2&ssel=0&tsel=0&kc=1&tk=%s&q=%s
@@ -111,7 +111,7 @@ func (gt *GTranslate) Translate(sl, tl, q string) (*TranslateRet, error) {
 		addr := fmt.Sprintf("%s/translate_a/single", gt.srvAddr)
 		data, err = gt.httpRequest("GET", addr, gt.reqParams(sl, tl, tkstr, q))
 	}
-	fmt.Printf("%s %v", data, err)
+	// fmt.Printf("%s %v", data, err)
 
 	ret := &TranslateRet{}
 	err = json.Unmarshal(data, ret)
