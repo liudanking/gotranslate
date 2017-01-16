@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/liudanking/goutil/netutil"
 )
 
 func TestTranslate(t *testing.T) {
@@ -12,7 +14,7 @@ func TestTranslate(t *testing.T) {
 		purl, _ := url.Parse("http://127.0.0.1:6152")
 		return purl, nil
 	}
-	gt, err := New(TRANSLATE_CN_ADDR, pf)
+	gt, err := New(TRANSLATE_COM_ADDR, pf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,4 +25,6 @@ func TestTranslate(t *testing.T) {
 		t.Fatal(err)
 	}
 	log.Printf("ret:%+v", ret)
+
+	netutil.DefaultHttpClient().RequestForm("GET", "https://www.baidu.com", nil).DoByte()
 }
