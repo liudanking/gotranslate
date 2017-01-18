@@ -78,6 +78,11 @@ func Translate(sl, tl, q string) (*TranslateRet, error) {
 	return defaultGTranslate.Translate(sl, tl, q)
 }
 
+// SimpleTranslate translate q to tl without test q sentences
+func SimpleTranslate(sl, tl, q string) (string, error) {
+	return defaultGTranslate.SimpleTranslate(sl, tl, q)
+}
+
 func (gt *GTranslate) Translate(sl, tl, q string) (*TranslateRet, error) {
 	if sl != "auto" {
 		if !strutil.StringIn(_supportedLangs, sl) {
@@ -116,6 +121,18 @@ func (gt *GTranslate) Translate(sl, tl, q string) (*TranslateRet, error) {
 	ret := &TranslateRet{}
 	err = json.Unmarshal(data, ret)
 	return ret, err
+}
+
+func (gt *GTranslate) SimpleTranslate(sl, tl, q string) (string, error) {
+	rsp, err := gt.Translate(sl, tl, q)
+	if err != nil {
+		return "", err
+	}
+	s := ""
+	for _, sentence := range rsp.Sentences {
+		s += sentence.Trans
+	}
+	return s, nil
 }
 
 func (gt *GTranslate) reqParams(sl, tl, tk, q string) map[string]interface{} {
