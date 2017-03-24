@@ -54,7 +54,7 @@ func main() {
 From [ISO839-1](https://cloud.google.com/translate/docs/languages)
 
 ```go
-var _supportedLangs = []string{"af", "sq", "am", "ar", "hy", "az", "eu", "be", "bn", "bs",
+var _supportedLangs = []string{"auto", af", "sq", "am", "ar", "hy", "az", "eu", "be", "bn", "bs",
 	"bg", "ca", "ceb", "ny", "zh-CN", "zh-TW", "co", "hr", "cs", "da", "nl", "en",
 	"eo", "et", "tl", "fi", "fr", "fy", "gl", "ka", "de", "el", "gu", "ht", "ha",
 	"haw", "iw", "hi", "hmn", "hu", "is", "ig", "id", "ga", "it", "ja", "jw", "kn",
