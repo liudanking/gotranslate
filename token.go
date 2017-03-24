@@ -25,19 +25,27 @@ func print(format string, args ...interface{}) {
 	}
 }
 
-func (gt *GTranslate) getTKK() (int, int, error) {
+func (gt *GTranslate) getTKK() (*typeTKK, error) {
+	if tkk, found := gt.cache.Get("tkk"); found {
+		return tkk.(*typeTKK), nil
+	}
+
 	data, err := gt.httpRequest("GET", gt.srvAddr, nil)
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
-	return findTKK(string(data))
+	h1, h2, err := findTKK(string(data))
+	if err != nil {
+		return nil, err
+	}
+
+	tkk := typeTKK{h1: h1, h2: h2}
+	gt.setTKK(tkk)
+	return &tkk, nil
 }
 
-// TODO
 func (gt *GTranslate) setTKK(tkk typeTKK) {
-	gt.tkkMtx.Lock()
-	gt.tkk = tkk
-	gt.tkkMtx.Unlock()
+	gt.cache.Set("tkk", &tkk, 3*time.Minute)
 }
 
 func (gt *GTranslate) initTKK() error {

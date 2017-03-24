@@ -67,4 +67,4 @@ var _supportedLangs = []string{"af", "sq", "am", "ar", "hy", "az", "eu", "be", "
 
 ## TODO
 
-* Cache TKK (maybe)
+* ~~Cache TKK (maybe)~~

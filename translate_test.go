@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 )
 
 func TestTranslate(t *testing.T) {
@@ -37,10 +38,16 @@ func TestSimpleTranslate(t *testing.T) {
 	}
 	q := "丈母娘唠车 别再加价买丰田埃尔法了！开车如开房的奔驰... 胡永平"
 	// q := "abc中国人"
-	ret, err := gt.SimpleTranslate("zh-CN", "zh-TW", q)
-	if err != nil {
-		t.Fatal(err)
+	for i := 0; i < 10; i++ {
+		start := time.Now()
+
+		ret, err := gt.SimpleTranslate("zh-CN", "zh-TW", q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		log.Printf("ret:%+v", ret)
+
+		log.Printf("cost:%v", time.Since(start))
 	}
-	log.Printf("ret:%+v", ret)
 
 }
