@@ -1,5 +1,7 @@
 # gotranslate - Google Translate library written by Go
 
+**Not Work Now**
+
 It's a pity that Google translate API has no free quota anymore. But the ajax translate API is always available. `gotranslate` is based on the ajax one, and provides a convenient way to use it. BTW, if you are using Google Translate in commercial project, purchasing Google translate service is still strongly recommended.
 
 ## Install

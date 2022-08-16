@@ -10,7 +10,7 @@ import (
 
 func TestTranslate(t *testing.T) {
 	pf := func(r *http.Request) (*url.URL, error) {
-		purl, _ := url.Parse("http://127.0.0.1:6152")
+		purl, _ := url.Parse("http://127.0.0.1:28081")
 		return purl, nil
 	}
 	gt, err := New(TRANSLATE_COM_ADDR, pf)
